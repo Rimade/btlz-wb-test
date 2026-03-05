@@ -37,10 +37,21 @@ function parseDecimal(s: string | undefined): number | null {
 
 /** Fetch box tariffs for date and upsert into wb_tariffs (one row per warehouse per day). */
 export async function fetchAndUpsertBoxTariffs(date: string): Promise<number> {
-    const { data } = await axios.get<WBBoxTariffsResponse>(WB_BOX_TARIFFS_URL, {
-        params: { date },
-        headers: { Authorization: `Bearer ${env.WB_API_TOKEN}` },
-    });
+    let data: WBBoxTariffsResponse;
+    try {
+        const res = await axios.get<WBBoxTariffsResponse>(WB_BOX_TARIFFS_URL, {
+            params: { date },
+            headers: { Authorization: `Bearer ${env.WB_API_TOKEN}` },
+        });
+        data = res.data;
+    } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+            throw new Error(
+                `WB API 401 Unauthorized — проверьте WB_API_TOKEN. ${err.response?.data?.detail ?? err.message}`
+            );
+        }
+        throw err;
+    }
 
     const warehouseList =
         data?.response?.data?.warehouseList ?? data?.data?.warehouseList ?? [];

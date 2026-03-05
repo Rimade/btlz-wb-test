@@ -1,6 +1,23 @@
-import knex, { migrate, seed } from "#postgres/knex.js";
+import knex, { migrate } from "#postgres/knex.js";
+import { startScheduler } from "#scheduler.js";
 
-await migrate.latest();
-await seed.run();
+function log(msg: string): void {
+    console.log(`[${new Date().toISOString()}] ${msg}`);
+}
 
-console.log("All migrations and seeds have been run");
+async function main(): Promise<void> {
+    try {
+        await knex.raw("select 1");
+        log("DB connected");
+    } catch (e) {
+        console.error("DB connection failed:", e);
+        process.exit(1);
+    }
+
+    await migrate.latest();
+    log("Migrations up to date");
+
+    startScheduler();
+}
+
+main();

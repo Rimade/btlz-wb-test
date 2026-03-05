@@ -1,5 +1,5 @@
 /**
- * Тестовые ID Google Таблиц — заменить на свои; дать доступ сервисному аккаунту.
+ * Test Google Sheet IDs — replace with real ones; share each sheet with GOOGLE_SERVICE_ACCOUNT_EMAIL.
  * @param {import("knex").Knex} knex
  * @returns {Promise<void>}
  */

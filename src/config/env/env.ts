@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import { z } from "zod";
 dotenv.config();
 
+// Google private key in env often has literal \n — restore real newlines
 function normalizePrivateKey(val: string | undefined): string | undefined {
     if (val == null || val === "") return undefined;
     return val.replace(/\\n/g, "\n");

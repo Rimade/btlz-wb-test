@@ -2,7 +2,7 @@ import { google } from "googleapis";
 import knex from "#postgres/knex.js";
 import env from "#config/env/env.js";
 
-const SHEET_NAME = "stocks_coefs";
+export const SHEET_NAME = "stocks_coefs";
 
 function getSheetsClient() {
     const auth = new google.auth.JWT({
@@ -16,8 +16,30 @@ function getSheetsClient() {
 /** Tariff row for sheet: same order as DB columns, sorted by coefficient. */
 type TariffRow = (string | number | null)[];
 
+/**
+ * Убеждается, что в таблице есть лист stocks_coefs; создаёт его при отсутствии.
+ */
+async function ensureSheetExists(
+    spreadsheetId: string,
+    sheets: ReturnType<typeof google.sheets>
+): Promise<void> {
+    const meta = await sheets.spreadsheets.get({ spreadsheetId });
+    const hasSheet = meta.data.sheets?.some(
+        (s) => s.properties?.title === SHEET_NAME
+    );
+    if (hasSheet) return;
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+            requests: [
+                { addSheet: { properties: { title: SHEET_NAME } } },
+            ],
+        },
+    });
+}
+
 /** Load today's tariffs from DB, sorted by box_delivery_base ASC (coefficient). */
-async function getTariffsForToday(date: string): Promise<TariffRow[]> {
+export async function getTariffsForToday(date: string): Promise<TariffRow[]> {
     const rows = await knex("wb_tariffs")
         .where("dt", date)
         .orderBy("box_delivery_base", "asc")
@@ -44,12 +66,13 @@ async function getTariffsForToday(date: string): Promise<TariffRow[]> {
     ]);
 }
 
-/** Write tariffs to one spreadsheet: clear sheet stocks_coefs, then write headers + rows. */
+/** Write tariffs to one spreadsheet: ensure sheet exists, clear, then write headers + rows. */
 async function syncSpreadsheet(
     spreadsheetId: string,
     date: string,
     sheets: ReturnType<typeof google.sheets>
 ): Promise<void> {
+    await ensureSheetExists(spreadsheetId, sheets);
     const rows = await getTariffsForToday(date);
     const headers: TariffRow = [
         "warehouse_name",

@@ -1,5 +1,6 @@
 import knex, { migrate } from "#postgres/knex.js";
 import { startScheduler } from "#scheduler.js";
+import { startHealthServer } from "#server/health.js";
 
 function log(msg: string): void {
     console.log(`[${new Date().toISOString()}] ${msg}`);
@@ -17,6 +18,7 @@ async function main(): Promise<void> {
     await migrate.latest();
     log("Migrations up to date");
 
+    startHealthServer();
     startScheduler();
 }
 

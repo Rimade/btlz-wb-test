@@ -28,7 +28,7 @@ interface WBBoxTariffsResponse {
 }
 
 /** Parse "11,2" or "48" to number. */
-function parseDecimal(s: string | undefined): number | null {
+export function parseDecimal(s: string | undefined): number | null {
     if (s == null || s === "") return null;
     const normalized = String(s).replace(",", ".");
     const n = parseFloat(normalized);
@@ -70,7 +70,7 @@ export async function fetchAndUpsertBoxTariffs(date: string): Promise<number> {
         dt: date,
     }));
 
-    const result = await knex("wb_tariffs")
+    await knex("wb_tariffs")
         .insert(rows)
         .onConflict(["warehouse_name", "dt"])
         .merge([
@@ -83,7 +83,6 @@ export async function fetchAndUpsertBoxTariffs(date: string): Promise<number> {
             "updated_at",
         ]);
 
-    // knex onConflict().merge() returns row count behaviour depends on driver; return rows length as done count
     return rows.length;
 }
 
